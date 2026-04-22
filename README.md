@@ -2,6 +2,9 @@
 
 A professional Retrieval-Augmented Generation (RAG) application designed to provide AI-powered support based on technical documentation URLs. Users can index multiple documentation sources and chat with an assistant that retrieves context from the indexed material to provide accurate, technical answers.
 
+![Chat Window Appearance](public/chatwindow.png)
+
+
 ## Features
 
 - **Multi-URL Ingestion**: Index one or many documentation websites simultaneously.
