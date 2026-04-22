@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Assistant | AI Researcher</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0c10;
+            --bg-panel: #161b22;
+            --accent: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.3);
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border: #30363d;
+            --msg-user: #1f6feb;
+            --msg-ai: #21262d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .url-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="text"] {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #238636;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background-color: #2ea043;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--border);
+        }
+
+        .url-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .url-item {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-all;
+        }
+
+        .remove-url {
+            color: #f85149;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Main Content */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-container {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 15px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--msg-user);
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background-color: var(--msg-ai);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
+            padding: 24px 40px;
+            background: linear-gradient(to top, var(--bg-deep) 80%, transparent);
+            display: flex;
+            gap: 16px;
+        }
+
+        #query-input {
+            flex: 1;
+        }
+
+        /* Loader */
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #21262d;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            align-self: flex-start;
+        }
+
+        .status-ready {
+            color: #3fb950;
+            border-color: #238636;
+            background: rgba(63, 185, 80, 0.1);
+        }
+
+        /* Typing indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 10px 15px;
+            background: var(--msg-ai);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            border-bottom-left-radius: 2px;
+            align-self: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        #query-input:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <h1>Docs Assistant</h1>
+            <p style="color: var(--text-muted); font-size: 12px;">Ask anything based on your docs.</p>
+        </div>
+
+        <div class="url-input-container">
+            <input type="text" id="url-input" placeholder="Paste documentation URL...">
+            <button class="btn-outline" onclick="addUrl()">Add URL</button>
+        </div>
+
+        <div class="url-list" id="url-list">
+            <!-- URLs will appear here -->
+        </div>
+
+        <button class="btn-primary" id="index-btn" onclick="indexDocs()">
+            <span class="loader" id="index-loader"></span>
+            Index Documents
+        </button>
+
+        <div id="status-badge" class="status-badge">Not Indexed</div>
+    </div>
+
+    <div class="main-chat">
+        <div class="chat-container" id="chat-container">
+            <div class="message ai">
+                Hello! I'm your documentation assistant. Add some URLs on the left and index them to start chatting.
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="query-input" placeholder="Index documents to start chatting..." onkeypress="handleEnter(event)" disabled>
+            <button class="btn-primary" id="send-btn" onclick="sendQuery()" disabled>Ask AI</button>
+        </div>
+    </div>
+
+    <script>
+        let urls = [];
+
+        function addUrl() {
+            const input = document.getElementById('url-input');
+            const url = input.value.trim();
+            if (url && !urls.includes(url)) {
+                urls.push(url);
+                renderUrls();
+                input.value = '';
+            }
+        }
+
+        function removeUrl(index) {
+            urls.splice(index, 1);
+            renderUrls();
+        }
+
+        function renderUrls() {
+            const list = document.getElementById('url-list');
+            list.innerHTML = urls.map((url, i) => `
+                <div class="url-item">
+                    <span>${url}</span>
+                    <span class="remove-url" onclick="removeUrl(${i})">✕</span>
+                </div>
+            `).join('');
+        }
+
+        async function indexDocs() {
+            if (urls.length === 0) return alert('Please add at least one URL');
+
+            const btn = document.getElementById('index-btn');
+            const loader = document.getElementById('index-loader');
+            const badge = document.getElementById('status-badge');
+
+            btn.disabled = true;
+            loader.style.display = 'inline-block';
+            badge.innerText = 'Indexing...';
+            badge.className = 'status-badge';
+
+            try {
+                const response = await fetch('/index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls })
+                });
+
+                if (response.ok) {
+                    badge.innerText = 'Ready — ' + urls.length + ' sources';
+                    badge.className = 'status-badge status-ready';
+                    document.getElementById('query-input').disabled = false;
+                    document.getElementById('query-input').placeholder = 'Type your question...';
+                    document.getElementById('send-btn').disabled = false;
+                } else {
+                    throw new Error('Indexing failed');
+                }
+            } catch (err) {
+                alert('Error indexing: ' + err.message);
+                badge.innerText = 'Error';
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        async function sendQuery() {
+            const input = document.getElementById('query-input');
+            const query = input.value.trim();
+            if (!query) return;
+
+            appendMessage('user', query);
+            input.value = '';
+            
+            const thinking = showThinking();
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                thinking.remove();
+
+                if (response.ok) {
+                    const data = await response.json();
+                    appendMessage('ai', data.answer);
+                } else {
+                    const error = await response.json();
+                    appendMessage('ai', 'Error: ' + (error.detail || 'Failed to get answer'));
+                }
+            } catch (err) {
+                appendMessage('ai', 'Network Error: ' + err.message);
+            }
+        }
+
+        function appendMessage(role, text) {
+            const container = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            msgDiv.innerText = text;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showThinking() {
+            const container = document.getElementById('chat-container');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'typing';
+            thinkingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+            container.appendChild(thinkingDiv);
+            container.scrollTop = container.scrollHeight;
+            return thinkingDiv;
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendQuery();
+        }
+    </script>
+</body>
+</html>
